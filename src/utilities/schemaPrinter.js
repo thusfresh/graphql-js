@@ -160,7 +160,9 @@ function printScalar(type: GraphQLScalarType): string {
 function printObject(type: GraphQLObjectType): string {
   const interfaces = type.getInterfaces();
   const implementedInterfaces = interfaces.length ?
-    ' implements ' + interfaces.map(i => i.name).join(', ') : '';
+    ' implements ' + interfaces
+      .sort((int1, int2) => int1.name.localeCompare(int2.name))
+      .map(i => i.name).join(', ') : '';
   return printDescription(type) +
     `type ${type.name}${implementedInterfaces} {\n` +
       printFields(type) + '\n' +
@@ -187,15 +189,19 @@ function printEnum(type: GraphQLEnumType): string {
 }
 
 function printEnumValues(values): string {
-  return values.map((value, i) =>
-    printDescription(value, '  ', !i) + '  ' +
-    value.name + printDeprecated(value)
-  ).join('\n');
+  return values
+    .sort((value1, value2) => value1.name.localeCompare(value2.name))
+    .map((value, i) =>
+      printDescription(value, '  ', !i) + '  ' +
+      value.name + printDeprecated(value)
+    ).join('\n');
 }
 
 function printInputObject(type: GraphQLInputObjectType): string {
   const fieldMap = type.getFields();
-  const fields = Object.keys(fieldMap).map(fieldName => fieldMap[fieldName]);
+  const fields = Object.keys(fieldMap)
+    .sort((name1, name2) => name1.localeCompare(name2))
+    .map(fieldName => fieldMap[fieldName]);
   return printDescription(type) +
     `input ${type.name} {\n` +
       fields.map((f, i) =>
@@ -206,7 +212,9 @@ function printInputObject(type: GraphQLInputObjectType): string {
 
 function printFields(type) {
   const fieldMap = type.getFields();
-  const fields = Object.keys(fieldMap).map(fieldName => fieldMap[fieldName]);
+  const fields = Object.keys(fieldMap)
+    .sort((name1, name2) => name1.localeCompare(name2))
+    .map(fieldName => fieldMap[fieldName]);
   return fields.map((f, i) =>
     printDescription(f, '  ', !i) + '  ' +
     f.name + printArgs(f.args, '  ') + ': ' +
@@ -219,15 +227,17 @@ function printArgs(args, indentation = '') {
     return '';
   }
 
+  args.sort((arg1, arg2) => arg1.name.localeCompare(arg2.name));
+
   // If every arg does not have a description, print them on one line.
   if (args.every(arg => !arg.description)) {
     return '(' + args.map(printInputValue).join(', ') + ')';
   }
 
   return '(\n' + args.map((arg, i) =>
-    printDescription(arg, '  ' + indentation, !i) + '  ' + indentation +
-    printInputValue(arg)
-  ).join('\n') + '\n' + indentation + ')';
+      printDescription(arg, '  ' + indentation, !i) + '  ' + indentation +
+      printInputValue(arg)
+    ).join('\n') + '\n' + indentation + ')';
 }
 
 function printInputValue(arg) {
